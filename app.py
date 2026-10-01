@@ -1,6 +1,7 @@
 import streamlit as st
 import hashlib
 import re
+import io
 
 
 # =========================================================
@@ -617,7 +618,8 @@ defaults = {
     "document_name": None,
     "embedding_dimension": 384,
     "chat_history": [],
-    "document_ready": False
+    "document_ready": False,
+    "embeddings_ready": False
 }
 
 for key, value in defaults.items():
@@ -991,6 +993,7 @@ def generate_answer(
     context
 ):
 
+    import ollama
 
 
     prompt = f"""
@@ -1033,26 +1036,24 @@ ANSWER:
 """
 
 
-    from groq import Groq
-
-    client = Groq(
-        api_key=st.secrets["GROQ_API_KEY"]
-    )
-
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+    response = ollama.chat(
+        model="llama3.2",
         messages=[
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        temperature=0.1,
-        max_tokens=300
+        options={
+            "temperature": 0.1,
+            "num_ctx": 4096,
+            "num_predict": 300
+        }
     )
 
+
     return clean_answer(
-        response.choices[0].message.content
+        response["message"]["content"]
     )
 
 
@@ -1060,48 +1061,19 @@ ANSWER:
 # PROCESS PDF
 # =========================================================
 
-def process_pdf(
-    uploaded_file
-):
+@st.cache_data(show_spinner=False)
+def extract_and_chunk_pdf(pdf_bytes, source_name):
 
     from pypdf import PdfReader
     from langchain_text_splitters import (
         RecursiveCharacterTextSplitter
     )
 
-
-    pdf_bytes = uploaded_file.getvalue()
-
-    pdf_hash = hashlib.md5(
-        pdf_bytes
-    ).hexdigest()
-
-
-    if (
-        st.session_state.processed_pdf_hash
-        == pdf_hash
-        and st.session_state.document_ready
-    ):
-
-        return
-
-
-    embedding_model = (
-        load_embedding_model()
-    )
-
-    chroma_client = (
-        get_chroma_client()
-    )
-
-
     reader = PdfReader(
-        uploaded_file
+        io.BytesIO(pdf_bytes)
     )
-
 
     pages_data = []
-
 
     for page_number, page in enumerate(
         reader.pages,
@@ -1109,7 +1081,6 @@ def process_pdf(
     ):
 
         text = page.extract_text()
-
 
         if text and text.strip():
 
@@ -1125,12 +1096,10 @@ def process_pdf(
                 cleaned_text
             )
 
-
             pages_data.append({
                 "page": page_number,
                 "text": cleaned_text.strip()
             })
-
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=650,
@@ -1146,18 +1115,13 @@ def process_pdf(
         ]
     )
 
-
     chunks = []
-
 
     for page_data in pages_data:
 
-        page_chunks = (
-            splitter.split_text(
-                page_data["text"]
-            )
+        page_chunks = splitter.split_text(
+            page_data["text"]
         )
-
 
         for chunk_index, chunk in enumerate(
             page_chunks
@@ -1166,61 +1130,124 @@ def process_pdf(
             if not chunk.strip():
                 continue
 
-
             chunks.append({
                 "text": chunk.strip(),
                 "page": page_data["page"],
-                "source": uploaded_file.name,
+                "source": source_name,
                 "chunk_index": chunk_index
             })
 
+    return pages_data, chunks
 
-    collection_name = (
-        f"pdf_{pdf_hash}"
+
+@st.cache_data(show_spinner=False)
+def create_document_embeddings(
+    pdf_hash,
+    texts
+):
+
+    embedding_model = (
+        load_embedding_model()
+    )
+
+    return embedding_model.encode(
+        list(texts),
+        batch_size=64,
+        normalize_embeddings=True,
+        show_progress_bar=False
     )
 
 
-    collection = (
-        chroma_client.get_or_create_collection(
-            name=collection_name
-        )
+def process_pdf(uploaded_file):
+
+    pdf_bytes = uploaded_file.getvalue()
+
+    pdf_hash = hashlib.md5(
+        pdf_bytes
+    ).hexdigest()
+
+    # Same document is already loaded in this session.
+    if (
+        st.session_state.processed_pdf_hash == pdf_hash
+        and st.session_state.document_ready
+        and st.session_state.collection is not None
+    ):
+        return
+
+    chroma_client = get_chroma_client()
+
+    # IMPORTANT PERFORMANCE DESIGN:
+    # Upload processing only extracts and chunks the PDF.
+    # Embeddings are generated lazily when the first question is asked.
+    pages_data, chunks = extract_and_chunk_pdf(
+        pdf_bytes,
+        uploaded_file.name
     )
 
+    collection_name = f"pdf_{pdf_hash}"
 
-    existing_count = collection.count()
+    collection = chroma_client.get_or_create_collection(
+        name=collection_name
+    )
 
-
-    if existing_count == 0 and chunks:
-
-        texts = [
-            chunk["text"]
-            for chunk in chunks
-        ]
-
-
-        embeddings = (
-            embedding_model.encode(
-                texts,
-                batch_size=32,
-                normalize_embeddings=True,
-                show_progress_bar=False
-            )
-        )
+    st.session_state.processed_pdf_hash = pdf_hash
+    st.session_state.pages_data = pages_data
+    st.session_state.chunks = chunks
+    st.session_state.collection_name = collection_name
+    st.session_state.collection = collection
+    st.session_state.document_name = uploaded_file.name
+    st.session_state.embedding_dimension = 384
+    st.session_state.embeddings_ready = collection.count() > 0
+    st.session_state.document_ready = True
+    st.session_state.chat_history = []
 
 
-        ids = [
+def ensure_document_embeddings():
+
+    if not st.session_state.document_ready:
+        return
+
+    collection = st.session_state.collection
+
+    if collection is None:
+        raise RuntimeError("Document collection is not initialized.")
+
+    # If embeddings already exist in ChromaDB, nothing to do.
+    if collection.count() > 0:
+        st.session_state.embeddings_ready = True
+        return
+
+    chunks = st.session_state.chunks
+
+    if not chunks:
+        raise RuntimeError("No text could be extracted from this PDF.")
+
+    texts = tuple(
+        chunk["text"]
+        for chunk in chunks
+    )
+
+    # This is the only expensive upload-independent step.
+    # It happens when the user asks the first question instead of
+    # making the PDF upload wait for embeddings.
+    embeddings = create_document_embeddings(
+        st.session_state.processed_pdf_hash,
+        texts
+    )
+
+    pdf_hash = st.session_state.processed_pdf_hash
+
+    collection.upsert(
+        ids=[
             f"{pdf_hash}_{i}"
             for i in range(len(chunks))
-        ]
-
-
-        documents = [
+        ],
+        documents=[
             chunk["text"]
             for chunk in chunks
-        ]
-
-
-        metadatas = [
+        ],
+        embeddings=embeddings.tolist(),
+        metadatas=[
             {
                 "page": chunk["page"],
                 "source": chunk["source"],
@@ -1228,46 +1255,9 @@ def process_pdf(
             }
             for chunk in chunks
         ]
-
-
-        collection.upsert(
-            ids=ids,
-            documents=documents,
-            embeddings=embeddings.tolist(),
-            metadatas=metadatas
-        )
-
-
-    st.session_state.processed_pdf_hash = (
-        pdf_hash
     )
 
-    st.session_state.pages_data = (
-        pages_data
-    )
-
-    st.session_state.chunks = (
-        chunks
-    )
-
-    st.session_state.collection_name = (
-        collection_name
-    )
-
-    st.session_state.collection = (
-        collection
-    )
-
-    st.session_state.document_name = (
-        uploaded_file.name
-    )
-
-    st.session_state.embedding_dimension = 384
-
-    st.session_state.document_ready = True
-
-    st.session_state.chat_history = []
-
+    st.session_state.embeddings_ready = True
 
 # =========================================================
 # SIDEBAR
@@ -1308,7 +1298,7 @@ with st.sidebar:
             <br>
 
             <strong>LLM</strong><br>
-            Groq GPT-OSS 20B
+            Llama 3.2
 
             <br><br>
 
@@ -1341,7 +1331,7 @@ with st.sidebar:
         """
         <div class="sidebar-card">
 
-            ⚡ Lazy embedding-model loading
+            ⚡ Lazy model loading
 
             <br><br>
 
@@ -1444,6 +1434,7 @@ with st.sidebar:
         st.session_state.document_name = None
         st.session_state.chat_history = []
         st.session_state.document_ready = False
+        st.session_state.embeddings_ready = False
 
         st.rerun()
 
@@ -1742,10 +1733,17 @@ if st.session_state.document_ready:
 
         try:
 
-            embedding_model = (
-                load_embedding_model()
-            )
+            # Generate embeddings lazily on the first question.
+            # This keeps PDF upload fast while preserving the same
+            # semantic + keyword RAG retrieval once ready.
+            if not st.session_state.embeddings_ready:
 
+                with st.spinner(
+                    "✦ Preparing document search for the first question..."
+                ):
+                    ensure_document_embeddings()
+
+            embedding_model = load_embedding_model()
 
             with st.spinner(
                 "✦ Finding the most relevant information..."
@@ -1856,10 +1854,13 @@ if st.session_state.document_ready:
 
             try:
 
-                embedding_model = (
-                    load_embedding_model()
-                )
+                if not st.session_state.embeddings_ready:
+                    with st.spinner(
+                        "✦ Preparing document search..."
+                    ):
+                        ensure_document_embeddings()
 
+                embedding_model = load_embedding_model()
 
                 debug_chunks = (
                     retrieve_relevant_chunks(
@@ -1950,7 +1951,7 @@ else:
                 &nbsp; • &nbsp;
 
                 <strong>
-                    Groq GPT-OSS 20B
+                    Llama 3.2
                 </strong>
 
             </div>
