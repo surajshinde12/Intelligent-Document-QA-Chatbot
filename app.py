@@ -2,6 +2,7 @@ import streamlit as st
 import hashlib
 import re
 import io
+import os
 
 
 # =========================================================
@@ -17,7 +18,7 @@ st.set_page_config(
 
 
 # =========================================================
-# CUSTOM CSS - MODERN DOCUMIND UI
+# CUSTOM CSS
 # =========================================================
 
 st.markdown("""
@@ -71,23 +72,18 @@ section[data-testid="stSidebar"] > div {
 .sidebar-brand-icon {
     width: 32px;
     height: 32px;
-
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
     border-radius: 10px;
     margin-right: 9px;
-
     background:
         linear-gradient(
             135deg,
             #2563eb,
             #7c3aed
         );
-
     color: white;
-
     box-shadow:
         0 8px 22px rgba(37, 99, 235, 0.22);
 }
@@ -106,7 +102,6 @@ section[data-testid="stSidebar"] > div {
     font-weight: 750;
     letter-spacing: 1.4px;
     text-transform: uppercase;
-
     margin-top: 27px;
     margin-bottom: 9px;
 }
@@ -118,16 +113,12 @@ section[data-testid="stSidebar"] > div {
             #121a26,
             #0f1621
         );
-
     border: 1px solid #202b3b;
     border-radius: 13px;
-
     padding: 14px 15px;
-
     color: #8995a7;
     font-size: 12px;
     line-height: 1.55;
-
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.02);
 }
@@ -141,7 +132,6 @@ section[data-testid="stSidebar"] > div {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-
     color: #9ba7b8;
     font-size: 11px;
 }
@@ -149,11 +139,8 @@ section[data-testid="stSidebar"] > div {
 .status-dot {
     width: 7px;
     height: 7px;
-
     border-radius: 50%;
-
     background: #22c55e;
-
     box-shadow:
         0 0 10px rgba(34,197,94,0.65);
 }
@@ -172,15 +159,11 @@ section[data-testid="stSidebar"] > div {
 .hero-symbol {
     width: 58px;
     height: 58px;
-
     margin: auto;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border-radius: 17px;
-
     background:
         linear-gradient(
             135deg,
@@ -188,11 +171,8 @@ section[data-testid="stSidebar"] > div {
             #4f46e5 52%,
             #7c3aed 100%
         );
-
     color: white;
-
     font-size: 27px;
-
     box-shadow:
         0 14px 35px rgba(37, 99, 235, 0.23),
         0 5px 15px rgba(124, 58, 237, 0.12);
@@ -202,7 +182,6 @@ section[data-testid="stSidebar"] > div {
     color: #f8fafc;
     font-size: 40px;
     font-weight: 780;
-
     letter-spacing: -1.8px;
     margin-top: 15px;
 }
@@ -222,7 +201,6 @@ section[data-testid="stSidebar"] > div {
     color: #aeb8c8;
     font-size: 11px;
     font-weight: 650;
-
     letter-spacing: 0.3px;
     margin-bottom: 7px;
 }
@@ -234,21 +212,16 @@ section[data-testid="stSidebar"] > div {
             #101824,
             #0d141e
         );
-
     border: 1px solid #263347;
     border-radius: 17px;
-
     padding: 8px;
-
     transition: 0.2s ease;
-
     box-shadow:
         0 10px 35px rgba(0,0,0,0.13);
 }
 
 [data-testid="stFileUploader"]:hover {
     border-color: #376fe0;
-
     box-shadow:
         0 10px 38px rgba(37,99,235,0.10);
 }
@@ -261,22 +234,17 @@ section[data-testid="stSidebar"] > div {
 .document-bar {
     display: flex;
     align-items: center;
-
     background:
         linear-gradient(
             135deg,
             #111a28,
             #0e1621
         );
-
     border: 1px solid #253246;
     border-radius: 15px;
-
     padding: 13px 16px;
-
     margin-top: 23px;
     margin-bottom: 29px;
-
     box-shadow:
         0 9px 30px rgba(0,0,0,0.12);
 }
@@ -284,37 +252,27 @@ section[data-testid="stSidebar"] > div {
 .document-icon {
     width: 42px;
     height: 42px;
-
     flex-shrink: 0;
-
     border-radius: 12px;
-
     background:
         linear-gradient(
             145deg,
             #172b61,
             #16234b
         );
-
     border: 1px solid #294178;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     margin-right: 13px;
-
     font-size: 19px;
 }
 
 .document-name {
     color: #edf2f8;
-
     font-size: 14px;
     font-weight: 680;
-
     max-width: 700px;
-
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -322,7 +280,6 @@ section[data-testid="stSidebar"] > div {
 
 .document-meta {
     color: #69768a;
-
     font-size: 10px;
     margin-top: 3px;
 }
@@ -339,19 +296,15 @@ section[data-testid="stSidebar"] > div {
 
 .welcome-title {
     color: #e7edf5;
-
     font-size: 20px;
     font-weight: 680;
-
     letter-spacing: -0.2px;
 }
 
 .welcome-text {
     color: #687588;
-
     font-size: 12px;
     line-height: 1.65;
-
     margin-top: 8px;
 }
 
@@ -367,25 +320,18 @@ section[data-testid="stSidebar"] > div {
             #111925,
             #0e151f
         );
-
     border: 1px solid #222e40;
     border-radius: 12px;
-
     padding: 12px 14px;
-
     color: #8995a7;
-
     font-size: 11px;
-
     margin-top: 7px;
-
     transition: all 0.2s ease;
 }
 
 .suggestion-box:hover {
     border-color: #34496a;
     color: #b6c0cf;
-
     transform: translateY(-1px);
 }
 
@@ -396,12 +342,9 @@ section[data-testid="stSidebar"] > div {
 
 [data-testid="stChatMessage"] {
     border-radius: 17px;
-
     margin-top: 11px;
     margin-bottom: 11px;
-
     padding: 3px 4px;
-
     border: 1px solid transparent;
 }
 
@@ -414,9 +357,7 @@ section[data-testid="stSidebar"] > div {
             #101722,
             #0d141e
         );
-
     border-color: #202c3d;
-
     box-shadow:
         0 8px 24px rgba(0,0,0,0.08);
 }
@@ -430,13 +371,11 @@ section[data-testid="stSidebar"] > div {
             #131e31,
             #101a2a
         );
-
     border-color: #243653;
 }
 
 [data-testid="stChatMessageContent"] {
     color: #d8e0eb;
-
     font-size: 13.5px;
     line-height: 1.78;
 }
@@ -448,33 +387,22 @@ section[data-testid="stSidebar"] > div {
 
 .source-label {
     color: #58667a;
-
     font-size: 9px;
     font-weight: 750;
-
     letter-spacing: 1px;
-
     text-transform: uppercase;
-
     margin-top: 11px;
     margin-bottom: 7px;
 }
 
 .source-pill {
     display: inline-block;
-
     background: #131c29;
-
     border: 1px solid #273449;
-
     color: #8b98ab;
-
     border-radius: 8px;
-
     padding: 4px 9px;
-
     font-size: 10px;
-
     margin-right: 5px;
     margin-bottom: 4px;
 }
@@ -509,7 +437,6 @@ section[data-testid="stSidebar"] > div {
             #101824,
             #0e151f
         );
-
     border: 1px solid #263348;
     border-radius: 13px;
 }
@@ -526,10 +453,8 @@ section[data-testid="stSidebar"] > div {
             #101824,
             #0d141e
         );
-
     border: 1px solid #222e40;
     border-radius: 13px;
-
     margin-top: 20px;
 }
 
@@ -545,20 +470,15 @@ section[data-testid="stSidebar"] > div {
             #17243a,
             #131d2d
         );
-
     color: #aeb9c9;
-
     border: 1px solid #29384e;
     border-radius: 10px;
-
     transition: all 0.2s ease;
 }
 
 .stButton > button:hover {
     color: #e5ebf4;
-
     border-color: #3b5d91;
-
     background:
         linear-gradient(
             135deg,
@@ -574,13 +494,9 @@ section[data-testid="stSidebar"] > div {
 
 .footer {
     text-align: center;
-
     color: #414d5e;
-
     font-size: 9px;
-
     margin-top: 60px;
-
     letter-spacing: 0.3px;
 }
 
@@ -622,13 +538,12 @@ defaults = {
 }
 
 for key, value in defaults.items():
-
     if key not in st.session_state:
         st.session_state[key] = value
 
 
 # =========================================================
-# LAZY LOAD EMBEDDING MODEL
+# EMBEDDING MODEL
 # =========================================================
 
 @st.cache_resource(show_spinner=False)
@@ -642,7 +557,7 @@ def load_embedding_model():
 
 
 # =========================================================
-# LAZY LOAD CHROMADB
+# CHROMADB
 # =========================================================
 
 @st.cache_resource(show_spinner=False)
@@ -656,7 +571,7 @@ def get_chroma_client():
 
 
 # =========================================================
-# CLEAN ANSWER
+# ANSWER CLEANING
 # =========================================================
 
 def clean_answer(answer):
@@ -685,7 +600,7 @@ def clean_answer(answer):
 
 def normalize_text(text):
 
-    text = text.lower()
+    text = str(text).lower()
 
     text = re.sub(
         r"[^a-z0-9\s]",
@@ -739,26 +654,205 @@ STOP_WORDS = {
     "be",
     "can",
     "could",
-    "please"
+    "please",
+    "give",
+    "list",
+    "main"
 }
 
 
 # =========================================================
-# EXTRACT KEYWORDS
+# QUERY EXPANSION
 # =========================================================
+
+QUERY_EXPANSIONS = {
+    "objective": {
+        "objective",
+        "objectives",
+        "aim",
+        "aims",
+        "goal",
+        "goals",
+        "purpose"
+    },
+
+    "guide": {
+        "guide",
+        "supervisor",
+        "mentor",
+        "faculty",
+        "advisor",
+        "adviser"
+    },
+
+    "problem": {
+        "problem",
+        "problems",
+        "statement",
+        "challenge",
+        "issue"
+    },
+
+    "technology": {
+        "technology",
+        "technologies",
+        "tools",
+        "software",
+        "framework",
+        "frameworks",
+        "tech",
+        "stack"
+    },
+
+    "scope": {
+        "scope",
+        "future",
+        "enhancement",
+        "enhancements",
+        "improvement",
+        "improvements"
+    },
+
+    "conclusion": {
+        "conclusion",
+        "conclusions",
+        "result",
+        "results",
+        "finding",
+        "findings"
+    }
+}
+
 
 def extract_keywords(text):
 
-    words = normalize_text(
-        text
-    ).split()
+    words = normalize_text(text).split()
 
-    return {
+    keywords = {
         word
         for word in words
         if word not in STOP_WORDS
         and len(word) >= 3
     }
+
+    expanded = set(keywords)
+
+    for word in keywords:
+
+        for canonical, synonyms in QUERY_EXPANSIONS.items():
+
+            if word in synonyms:
+                expanded.update(synonyms)
+
+    return expanded
+
+
+# =========================================================
+# SECTION-AWARE KEYWORD BOOST
+# =========================================================
+
+def section_keyword_boost(
+    question,
+    document
+):
+
+    question_text = normalize_text(question)
+    document_text = normalize_text(document)
+
+    score = 0.0
+
+    # Objectives
+    if any(
+        term in question_text
+        for term in [
+            "objective",
+            "objectives",
+            "aim",
+            "aims",
+            "goal",
+            "goals",
+            "purpose"
+        ]
+    ):
+
+        if any(
+            term in document_text
+            for term in [
+                "objective",
+                "objectives",
+                "aim",
+                "aims",
+                "goal",
+                "goals",
+                "purpose"
+            ]
+        ):
+            score = max(score, 0.85)
+
+
+    # Project guide
+    if (
+        "guide" in question_text
+        or "supervisor" in question_text
+        or "mentor" in question_text
+    ):
+
+        if any(
+            term in document_text
+            for term in [
+                "guide",
+                "supervisor",
+                "mentor",
+                "faculty",
+                "advisor",
+                "adviser"
+            ]
+        ):
+            score = max(score, 0.85)
+
+
+    # Problem statement
+    if (
+        "problem" in question_text
+        or "statement" in question_text
+        or "challenge" in question_text
+    ):
+
+        if any(
+            term in document_text
+            for term in [
+                "problem",
+                "statement",
+                "challenge"
+            ]
+        ):
+            score = max(score, 0.85)
+
+
+    # Technologies
+    if (
+        "technology" in question_text
+        or "technologies" in question_text
+        or "tools" in question_text
+        or "framework" in question_text
+        or "used" in question_text
+    ):
+
+        if any(
+            term in document_text
+            for term in [
+                "technology",
+                "technologies",
+                "tools",
+                "framework",
+                "python",
+                "software"
+            ]
+        ):
+            score = max(score, 0.80)
+
+
+    return score
 
 
 # =========================================================
@@ -796,7 +890,7 @@ def lexical_score(
 
     overlap_score = (
         len(overlap)
-        / len(question_keywords)
+        / max(len(question_keywords), 1)
     )
 
     phrase_score = 0.0
@@ -808,47 +902,27 @@ def lexical_score(
     ):
         phrase_score = 1.0
 
-    important_pairs = [
-        ("project", "guide"),
-        ("project", "objectives"),
-        ("main", "objectives"),
-        ("problem", "statement"),
-        ("project", "area"),
-        ("technologies", "used"),
-        ("future", "scope"),
-        ("key", "conclusions"),
-        ("project", "title")
-    ]
 
-    for word1, word2 in important_pairs:
+    section_score = section_keyword_boost(
+        question,
+        document
+    )
 
-        if (
-            word1 in question_normalized
-            and word2 in question_normalized
-        ):
-
-            if (
-                word1 in document_normalized
-                and word2 in document_normalized
-            ):
-
-                phrase_score = max(
-                    phrase_score,
-                    0.8
-                )
 
     return min(
         1.0,
         (
-            overlap_score * 0.7
+            overlap_score * 0.45
             +
-            phrase_score * 0.3
+            phrase_score * 0.20
+            +
+            section_score * 0.35
         )
     )
 
 
 # =========================================================
-# RETRIEVE + RERANK
+# RETRIEVAL
 # =========================================================
 
 def retrieve_relevant_chunks(
@@ -865,17 +939,19 @@ def retrieve_relevant_chunks(
         )[0]
     )
 
+
     results = collection.query(
         query_embeddings=[
             question_embedding.tolist()
         ],
-        n_results=8,
+        n_results=12,
         include=[
             "documents",
             "metadatas",
             "distances"
         ]
     )
+
 
     documents = (
         results.get("documents", [[]])[0]
@@ -889,7 +965,9 @@ def retrieve_relevant_chunks(
         results.get("distances", [[]])[0]
     )
 
+
     candidates = []
+
 
     for document, metadata, distance in zip(
         documents,
@@ -897,37 +975,65 @@ def retrieve_relevant_chunks(
         distances
     ):
 
+        # Chroma cosine distance is normally
+        # lower = better.
+        #
+        # Convert it into a similarity-like
+        # score while keeping it between 0 and 1.
+
+        distance_value = float(distance)
+
         semantic_score = max(
             0.0,
-            1.0 - float(distance)
+            min(
+                1.0,
+                1.0 - distance_value
+            )
         )
+
 
         keyword_score = lexical_score(
             question,
             document
         )
 
-        final_score = (
-            semantic_score * 0.65
-            +
-            keyword_score * 0.35
+
+        # Extra boost when important section
+        # terminology appears in the chunk.
+
+        section_score = section_keyword_boost(
+            question,
+            document
         )
+
+
+        final_score = (
+            semantic_score * 0.50
+            +
+            keyword_score * 0.30
+            +
+            section_score * 0.20
+        )
+
 
         candidates.append({
             "document": document,
             "metadata": metadata,
-            "distance": float(distance),
+            "distance": distance_value,
             "semantic_score": semantic_score,
             "keyword_score": keyword_score,
+            "section_score": section_score,
             "final_score": final_score
         })
+
 
     candidates.sort(
         key=lambda item: item["final_score"],
         reverse=True
     )
 
-    return candidates[:4]
+
+    return candidates[:6]
 
 
 # =========================================================
@@ -941,6 +1047,7 @@ def build_context(
     context_parts = []
 
     source_pages = set()
+
 
     for item in retrieved_chunks:
 
@@ -957,6 +1064,7 @@ def build_context(
             page_number
         )
 
+
         context_parts.append(
             f"""
 Page {page_number}:
@@ -965,6 +1073,7 @@ Page {page_number}:
 """
         )
 
+
     return (
         "\n\n".join(context_parts),
         source_pages
@@ -972,47 +1081,84 @@ Page {page_number}:
 
 
 # =========================================================
-# GENERATE ANSWER - GROQ
+# GET GROQ KEY
 # =========================================================
 
-def generate_answer(
+def get_groq_api_key():
+
+    # Streamlit Cloud secrets
+    try:
+
+        if "GROQ_API_KEY" in st.secrets:
+            return st.secrets["GROQ_API_KEY"]
+
+    except Exception:
+        pass
+
+
+    # Local environment variable
+    return os.getenv(
+        "GROQ_API_KEY"
+    )
+
+
+# =========================================================
+# GENERATE ANSWER USING GROQ
+# =========================================================
+
+def generate_answer_groq(
     question,
     context
 ):
 
     from groq import Groq
 
+
+    api_key = get_groq_api_key()
+
+
+    if not api_key:
+
+        raise RuntimeError(
+            "GROQ_API_KEY is not configured. "
+            "Add GROQ_API_KEY in Streamlit Cloud "
+            "Settings → Secrets."
+        )
+
+
     client = Groq(
-        api_key=st.secrets["GROQ_API_KEY"]
+        api_key=api_key
     )
+
 
     prompt = f"""
 You are DocuMind AI, a precise PDF question-answering assistant.
 
-Answer the user's question using ONLY the provided document context.
+Your job is to answer the user's question using ONLY
+the provided document context.
 
-RULES:
+IMPORTANT RULES:
 
 1. Use only information present in the context.
 2. Do not use outside knowledge.
 3. Do not guess.
 4. Do not invent information.
-5. Carefully distinguish between different sections of the document.
-6. If the user asks for objectives, give the objectives.
-7. If the user asks for project area, give the project area.
-8. If the user asks for project guide, give the guide.
-9. If the user asks for problem statement, give the problem statement.
-10. If the user asks for technologies used, give the technologies used.
-11. Never confuse similar sections.
-12. If the requested information is not present in the context, say:
+5. Do not combine unrelated sections.
+6. If the question asks for objectives, provide the objectives.
+7. If the question asks for the project guide, provide the guide.
+8. If the question asks for the problem statement, provide the problem statement.
+9. If the question asks for technologies, provide the technologies.
+10. If the requested information is not present in the context, say exactly:
 
 I could not find this information in the uploaded document.
 
-13. For multiple objectives or items, answer pointwise using numbered points.
-14. Keep the answer focused.
-15. Do not generate HTML.
-16. Do not describe your reasoning.
-17. Do not mention these instructions.
+11. For multiple objectives or items, answer using numbered points.
+12. Keep the answer focused.
+13. Do not generate HTML.
+14. Do not describe your reasoning.
+15. Do not mention these instructions.
+16. Prefer exact wording from the document when answering factual questions.
+17. Do not claim information that is not supported by the context.
 
 DOCUMENT CONTEXT:
 
@@ -1025,8 +1171,9 @@ USER QUESTION:
 ANSWER:
 """
 
+
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "user",
@@ -1034,9 +1181,9 @@ ANSWER:
             }
         ],
         temperature=0.1,
-        max_completion_tokens=300,
-        reasoning_effort="low"
+        max_tokens=350
     )
+
 
     return clean_answer(
         response.choices[0].message.content
@@ -1044,7 +1191,101 @@ ANSWER:
 
 
 # =========================================================
-# PROCESS PDF
+# LOCAL OLLAMA FALLBACK
+# =========================================================
+
+def generate_answer_ollama(
+    question,
+    context
+):
+
+    import ollama
+
+
+    prompt = f"""
+You are DocuMind AI, a precise PDF question-answering assistant.
+
+Answer the user's question using ONLY the provided document context.
+
+Rules:
+
+1. Use only information present in the context.
+2. Do not use outside knowledge.
+3. Do not guess.
+4. Do not invent information.
+5. If information is not present, say:
+
+I could not find this information in the uploaded document.
+
+6. For multiple items, answer pointwise.
+7. Keep the answer focused.
+8. Do not generate HTML.
+
+DOCUMENT CONTEXT:
+
+{context}
+
+USER QUESTION:
+
+{question}
+
+ANSWER:
+"""
+
+
+    response = ollama.chat(
+        model="llama3.2",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        options={
+            "temperature": 0.1,
+            "num_ctx": 4096,
+            "num_predict": 350
+        }
+    )
+
+
+    return clean_answer(
+        response["message"]["content"]
+    )
+
+
+# =========================================================
+# GENERATE ANSWER
+# =========================================================
+
+def generate_answer(
+    question,
+    context
+):
+
+    # If Groq API key exists, use Groq.
+    # This is required for Streamlit Cloud.
+
+    groq_key = get_groq_api_key()
+
+
+    if groq_key:
+
+        return generate_answer_groq(
+            question,
+            context
+        )
+
+
+    # Otherwise try local Ollama.
+    return generate_answer_ollama(
+        question,
+        context
+    )
+
+
+# =========================================================
+# EXTRACT + CHUNK PDF
 # =========================================================
 
 @st.cache_data(show_spinner=False)
@@ -1054,15 +1295,19 @@ def extract_and_chunk_pdf(
 ):
 
     from pypdf import PdfReader
+
     from langchain_text_splitters import (
         RecursiveCharacterTextSplitter
     )
+
 
     reader = PdfReader(
         io.BytesIO(pdf_bytes)
     )
 
+
     pages_data = []
+
 
     for page_number, page in enumerate(
         reader.pages,
@@ -1070,6 +1315,7 @@ def extract_and_chunk_pdf(
     ):
 
         text = page.extract_text()
+
 
         if text and text.strip():
 
@@ -1085,10 +1331,12 @@ def extract_and_chunk_pdf(
                 cleaned_text
             )
 
+
             pages_data.append({
                 "page": page_number,
                 "text": cleaned_text.strip()
             })
+
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=650,
@@ -1104,13 +1352,16 @@ def extract_and_chunk_pdf(
         ]
     )
 
+
     chunks = []
+
 
     for page_data in pages_data:
 
         page_chunks = splitter.split_text(
             page_data["text"]
         )
+
 
         for chunk_index, chunk in enumerate(
             page_chunks
@@ -1119,6 +1370,7 @@ def extract_and_chunk_pdf(
             if not chunk.strip():
                 continue
 
+
             chunks.append({
                 "text": chunk.strip(),
                 "page": page_data["page"],
@@ -1126,11 +1378,12 @@ def extract_and_chunk_pdf(
                 "chunk_index": chunk_index
             })
 
+
     return pages_data, chunks
 
 
 # =========================================================
-# CREATE DOCUMENT EMBEDDINGS
+# CREATE EMBEDDINGS
 # =========================================================
 
 @st.cache_data(show_spinner=False)
@@ -1142,6 +1395,7 @@ def create_document_embeddings(
     embedding_model = (
         load_embedding_model()
     )
+
 
     return embedding_model.encode(
         list(texts),
@@ -1161,9 +1415,11 @@ def process_pdf(
 
     pdf_bytes = uploaded_file.getvalue()
 
+
     pdf_hash = hashlib.md5(
         pdf_bytes
     ).hexdigest()
+
 
     if (
         st.session_state.processed_pdf_hash
@@ -1172,9 +1428,11 @@ def process_pdf(
     ):
         return
 
+
     chroma_client = (
         get_chroma_client()
     )
+
 
     pages_data, chunks = (
         extract_and_chunk_pdf(
@@ -1183,9 +1441,11 @@ def process_pdf(
         )
     )
 
+
     collection_name = (
         f"pdf_{pdf_hash}"
     )
+
 
     collection = (
         chroma_client.get_or_create_collection(
@@ -1193,7 +1453,11 @@ def process_pdf(
         )
     )
 
-    existing_count = collection.count()
+
+    existing_count = (
+        collection.count()
+    )
+
 
     if existing_count == 0 and chunks:
 
@@ -1202,6 +1466,7 @@ def process_pdf(
             for chunk in chunks
         )
 
+
         embeddings = (
             create_document_embeddings(
                 pdf_hash,
@@ -1209,15 +1474,18 @@ def process_pdf(
             )
         )
 
+
         ids = [
             f"{pdf_hash}_{i}"
             for i in range(len(chunks))
         ]
 
+
         documents = [
             chunk["text"]
             for chunk in chunks
         ]
+
 
         metadatas = [
             {
@@ -1228,12 +1496,14 @@ def process_pdf(
             for chunk in chunks
         ]
 
+
         collection.upsert(
             ids=ids,
             documents=documents,
             embeddings=embeddings.tolist(),
             metadatas=metadatas
         )
+
 
     st.session_state.processed_pdf_hash = (
         pdf_hash
@@ -1274,133 +1544,178 @@ with st.sidebar:
 
     st.markdown(
         """
-        <div class="sidebar-brand">
-            <span class="sidebar-brand-icon">✦</span>
-            DocuMind AI
-        </div>
+<div class="sidebar-brand">
+    <span class="sidebar-brand-icon">✦</span>
+    DocuMind AI
+</div>
 
-        <div class="sidebar-description">
-            Private document intelligence
-        </div>
+<div class="sidebar-description">
+    Private document intelligence
+</div>
         """,
         unsafe_allow_html=True
     )
+
 
     st.markdown(
         '<div class="sidebar-heading">SYSTEM</div>',
         unsafe_allow_html=True
     )
 
+
+    groq_available = bool(
+        get_groq_api_key()
+    )
+
+
+    if groq_available:
+
+        llm_name = "Groq Llama 3.1 8B"
+
+        llm_status = "Cloud LLM ready"
+
+    else:
+
+        llm_name = "Ollama Llama 3.2"
+
+        llm_status = "Local LLM mode"
+
+
     st.markdown(
-        """
-        <div class="sidebar-card">
+        f"""
+<div class="sidebar-card">
 
-            <div class="sidebar-status">
-                <span class="status-dot"></span>
-                AI system ready
-            </div>
+    <div class="sidebar-status">
+        <span class="status-dot"></span>
+        {llm_status}
+    </div>
 
-            <br>
+    <br>
 
-            <strong>LLM</strong><br>
-            GPT-OSS 20B via Groq
+    <strong>LLM</strong><br>
+    {llm_name}
 
-            <br><br>
+    <br><br>
 
-            <strong>Embeddings</strong><br>
-            all-MiniLM-L6-v2
+    <strong>Embeddings</strong><br>
+    all-MiniLM-L6-v2
 
-            <br><br>
+    <br><br>
 
-            <strong>Vector Database</strong><br>
-            ChromaDB
+    <strong>Vector Database</strong><br>
+    ChromaDB
 
-            <br><br>
+    <br><br>
 
-            <strong>Architecture</strong><br>
-            Retrieval-Augmented Generation
+    <strong>Architecture</strong><br>
+    Retrieval-Augmented Generation
 
-        </div>
+</div>
         """,
         unsafe_allow_html=True
     )
+
 
     st.markdown(
         '<div class="sidebar-heading">PERFORMANCE</div>',
         unsafe_allow_html=True
     )
 
+
     st.markdown(
         """
-        <div class="sidebar-card">
+<div class="sidebar-card">
 
-            ⚡ Lazy model loading
+    ⚡ Cached model loading
 
-            <br><br>
+    <br><br>
 
-            🎯 Semantic + keyword reranking
+    🎯 Semantic + keyword reranking
 
-            <br><br>
+    <br><br>
 
-            📦 Focused context
+    📦 Multi-chunk context
 
-            <br><br>
+    <br><br>
 
-            🧠 Low-temperature generation
+    🧠 Low-temperature generation
 
-        </div>
+</div>
         """,
         unsafe_allow_html=True
     )
 
+
     st.markdown(
-        '<div class="sidebar-heading">PRIVACY</div>',
+        '<div class="sidebar-heading">ARCHITECTURE</div>',
         unsafe_allow_html=True
     )
 
-    st.markdown(
+
+    if groq_available:
+
+        privacy_text = """
+<div class="sidebar-card">
+
+    🔐 Local PDF processing and embeddings.
+
+    <br><br>
+
+    Retrieved context is sent to the
+    configured Groq LLM for answer generation.
+
+</div>
         """
-        <div class="sidebar-card">
 
-            🔒 Document processing and
-            embeddings remain local.
+    else:
 
-            <br><br>
+        privacy_text = """
+<div class="sidebar-card">
 
-            LLM answers are generated
-            through the secured Groq API.
+    🔒 Local processing mode.
 
-        </div>
-        """,
+    <br><br>
+
+    No cloud LLM configured.
+    Local Ollama inference is used.
+
+</div>
+        """
+
+
+    st.markdown(
+        privacy_text,
         unsafe_allow_html=True
     )
+
 
     st.markdown(
         '<div class="sidebar-heading">DOCUMENT</div>',
         unsafe_allow_html=True
     )
 
+
     if st.session_state.document_name:
 
         st.markdown(
             f"""
-            <div class="sidebar-card">
+<div class="sidebar-card">
 
-                <strong>
-                    {st.session_state.document_name}
-                </strong>
+    <strong>
+        {st.session_state.document_name}
+    </strong>
 
-                <br><br>
+    <br><br>
 
-                {len(st.session_state.pages_data)}
-                pages
+    {len(st.session_state.pages_data)}
+    pages
 
-                &nbsp;•&nbsp;
+    &nbsp;•&nbsp;
 
-                {len(st.session_state.chunks)}
-                chunks
+    {len(st.session_state.chunks)}
+    chunks
 
-            </div>
+</div>
             """,
             unsafe_allow_html=True
         )
@@ -1409,14 +1724,16 @@ with st.sidebar:
 
         st.markdown(
             """
-            <div class="sidebar-card">
-                No document loaded yet.
-            </div>
+<div class="sidebar-card">
+    No document loaded yet.
+</div>
             """,
             unsafe_allow_html=True
         )
 
+
     st.markdown("")
+
 
     if st.button(
         "＋  New Document",
@@ -1441,21 +1758,21 @@ with st.sidebar:
 
 st.markdown(
     """
-    <div class="hero">
+<div class="hero">
 
-        <div class="hero-symbol">
-            ✦
-        </div>
-
-        <div class="hero-title">
-            DocuMind AI
-        </div>
-
-        <div class="hero-subtitle">
-            Ask questions. Find answers. Stay private.
-        </div>
-
+    <div class="hero-symbol">
+        ✦
     </div>
+
+    <div class="hero-title">
+        DocuMind AI
+    </div>
+
+    <div class="hero-subtitle">
+        Ask questions. Find answers. Stay private.
+    </div>
+
+</div>
     """,
     unsafe_allow_html=True
 )
@@ -1469,6 +1786,7 @@ st.markdown(
     '<div class="upload-title">DOCUMENT</div>',
     unsafe_allow_html=True
 )
+
 
 uploaded_file = st.file_uploader(
     "📎 Upload a PDF",
@@ -1485,9 +1803,11 @@ if uploaded_file is not None:
 
     pdf_bytes = uploaded_file.getvalue()
 
+
     pdf_hash = hashlib.md5(
         pdf_bytes
     ).hexdigest()
+
 
     if (
         st.session_state.processed_pdf_hash
@@ -1505,10 +1825,12 @@ if uploaded_file is not None:
                     uploaded_file
                 )
 
+
                 status.update(
                     label="Document ready",
                     state="complete"
                 )
+
 
             except Exception as error:
 
@@ -1516,6 +1838,7 @@ if uploaded_file is not None:
                     label="Document processing failed",
                     state="error"
                 )
+
 
                 st.error(
                     f"Could not process the PDF: {error}"
@@ -1534,9 +1857,11 @@ if st.session_state.document_ready:
         st.session_state.pages_data
     )
 
+
     chunks_count = len(
         st.session_state.chunks
     )
+
 
     # -----------------------------------------------------
     # DOCUMENT BAR
@@ -1544,34 +1869,35 @@ if st.session_state.document_ready:
 
     st.markdown(
         f"""
-        <div class="document-bar">
+<div class="document-bar">
 
-            <div class="document-icon">
-                📄
-            </div>
+    <div class="document-icon">
+        📄
+    </div>
 
-            <div>
+    <div>
 
-                <div class="document-name">
-                    {st.session_state.document_name}
-                </div>
-
-                <div class="document-meta">
-                    {pages_count} pages
-                    &nbsp;•&nbsp;
-                    {chunks_count} chunks
-                    &nbsp;•&nbsp;
-                    384-dimensional embeddings
-                    &nbsp;•&nbsp;
-                    RAG
-                </div>
-
-            </div>
-
+        <div class="document-name">
+            {st.session_state.document_name}
         </div>
+
+        <div class="document-meta">
+            {pages_count} pages
+            &nbsp;•&nbsp;
+            {chunks_count} chunks
+            &nbsp;•&nbsp;
+            384-dimensional embeddings
+            &nbsp;•&nbsp;
+            RAG
+        </div>
+
+    </div>
+
+</div>
         """,
         unsafe_allow_html=True
     )
+
 
     # -----------------------------------------------------
     # WELCOME
@@ -1581,64 +1907,70 @@ if st.session_state.document_ready:
 
         st.markdown(
             """
-            <div class="welcome">
+<div class="welcome">
 
-                <div class="welcome-title">
-                    Your document is ready.
-                </div>
+    <div class="welcome-title">
+        Your document is ready.
+    </div>
 
-                <div class="welcome-text">
-                    Ask a question and DocuMind will
-                    retrieve the most relevant information
-                    from your PDF.
-                </div>
+    <div class="welcome-text">
+        Ask a question and DocuMind will
+        retrieve the most relevant information
+        from your PDF.
+    </div>
 
-            </div>
+</div>
             """,
             unsafe_allow_html=True
         )
 
+
         col1, col2 = st.columns(2)
+
 
         with col1:
 
             st.markdown(
                 """
-                <div class="suggestion-box">
-                    💡 What are the main objectives?
-                </div>
+<div class="suggestion-box">
+    💡 What are the main objectives?
+</div>
                 """,
                 unsafe_allow_html=True
             )
 
+
             st.markdown(
                 """
-                <div class="suggestion-box">
-                    💡 Summarize the document.
-                </div>
+<div class="suggestion-box">
+    💡 Summarize the document.
+</div>
                 """,
                 unsafe_allow_html=True
             )
+
 
         with col2:
 
             st.markdown(
                 """
-                <div class="suggestion-box">
-                    💡 Who is the project guide?
-                </div>
+<div class="suggestion-box">
+    💡 Who is the project guide?
+</div>
                 """,
                 unsafe_allow_html=True
             )
 
+
             st.markdown(
                 """
-                <div class="suggestion-box">
-                    💡 What is the problem statement?
-                </div>
+<div class="suggestion-box">
+    💡 What is the problem statement?
+</div>
                 """,
                 unsafe_allow_html=True
             )
+
 
     # =====================================================
     # CHAT HISTORY
@@ -1654,6 +1986,7 @@ if st.session_state.document_ready:
                     message["content"]
                 )
 
+
         else:
 
             with st.chat_message("assistant"):
@@ -1661,6 +1994,7 @@ if st.session_state.document_ready:
                 st.markdown(
                     message["content"]
                 )
+
 
                 if message.get("sources"):
 
@@ -1671,7 +2005,9 @@ if st.session_state.document_ready:
                         unsafe_allow_html=True
                     )
 
+
                     source_html = ""
+
 
                     for page in message["sources"]:
 
@@ -1681,10 +2017,12 @@ if st.session_state.document_ready:
                             f'</span>'
                         )
 
+
                     st.markdown(
                         source_html,
                         unsafe_allow_html=True
                     )
+
 
     # =====================================================
     # CHAT INPUT
@@ -1694,6 +2032,7 @@ if st.session_state.document_ready:
         "Ask your document anything..."
     )
 
+
     if question:
 
         st.session_state.chat_history.append({
@@ -1701,11 +2040,13 @@ if st.session_state.document_ready:
             "content": question
         })
 
+
         try:
 
             embedding_model = (
                 load_embedding_model()
             )
+
 
             with st.spinner(
                 "✦ Finding the most relevant information..."
@@ -1719,11 +2060,13 @@ if st.session_state.document_ready:
                     )
                 )
 
+
             context, source_pages = (
                 build_context(
                     retrieved_chunks
                 )
             )
+
 
             if not retrieved_chunks:
 
@@ -1734,13 +2077,32 @@ if st.session_state.document_ready:
 
                 source_pages = set()
 
+
             else:
 
                 best_score = (
                     retrieved_chunks[0]["final_score"]
                 )
 
-                if best_score < 0.18:
+                best_keyword_score = (
+                    retrieved_chunks[0]["keyword_score"]
+                )
+
+
+                # More permissive than the previous
+                # 0.18-only threshold.
+                #
+                # A strong keyword/section match is
+                # allowed even when semantic similarity
+                # is not extremely high.
+
+                information_found = (
+                    best_score >= 0.10
+                    or best_keyword_score >= 0.20
+                )
+
+
+                if not information_found:
 
                     answer = (
                         "I could not find this information "
@@ -1749,16 +2111,30 @@ if st.session_state.document_ready:
 
                     source_pages = set()
 
+
                 else:
 
                     with st.spinner(
                         "✦ Generating answer..."
                     ):
 
-                        answer = generate_answer(
-                            question,
-                            context
-                        )
+                        try:
+
+                            answer = generate_answer(
+                                question,
+                                context
+                            )
+
+                        except Exception as llm_error:
+
+                            answer = (
+                                "The document was retrieved "
+                                "successfully, but the answer "
+                                "generation service is not "
+                                "configured correctly.\n\n"
+                                f"Details: {llm_error}"
+                            )
+
 
             st.session_state.chat_history.append({
                 "role": "assistant",
@@ -1768,7 +2144,9 @@ if st.session_state.document_ready:
                 )
             })
 
+
             st.rerun()
+
 
         except Exception as error:
 
@@ -1781,7 +2159,9 @@ if st.session_state.document_ready:
                 "sources": []
             })
 
+
             st.rerun()
+
 
     # =====================================================
     # RETRIEVAL DEBUGGER
@@ -1796,10 +2176,12 @@ if st.session_state.document_ready:
             "semantic + keyword retrieval system."
         )
 
+
         debug_question = st.text_input(
             "Test retrieval",
             placeholder="Enter a question..."
         )
+
 
         if debug_question:
 
@@ -1809,6 +2191,7 @@ if st.session_state.document_ready:
                     load_embedding_model()
                 )
 
+
                 debug_chunks = (
                     retrieve_relevant_chunks(
                         st.session_state.collection,
@@ -1817,6 +2200,14 @@ if st.session_state.document_ready:
                     )
                 )
 
+
+                if not debug_chunks:
+
+                    st.warning(
+                        "No relevant chunks were retrieved."
+                    )
+
+
                 for i, item in enumerate(
                     debug_chunks,
                     start=1
@@ -1824,10 +2215,12 @@ if st.session_state.document_ready:
 
                     metadata = item["metadata"]
 
+
                     st.markdown(
                         f"**Result {i} — "
                         f"Page {metadata['page']}**"
                     )
+
 
                     st.caption(
                         f"Final score: "
@@ -1839,15 +2232,21 @@ if st.session_state.document_ready:
                         f"Keyword: "
                         f"{item['keyword_score']:.3f}"
                         f"  •  "
+                        f"Section: "
+                        f"{item['section_score']:.3f}"
+                        f"  •  "
                         f"Distance: "
                         f"{item['distance']:.3f}"
                     )
+
 
                     st.write(
                         item["document"]
                     )
 
+
                     st.divider()
+
 
             except Exception as error:
 
@@ -1864,40 +2263,40 @@ else:
 
     st.markdown(
         """
-        <div class="welcome">
+<div class="welcome">
 
-            <div class="welcome-title">
-                Your documents, made searchable.
-            </div>
+    <div class="welcome-title">
+        Your documents, made searchable.
+    </div>
 
-            <div class="welcome-text">
+    <div class="welcome-text">
 
-                Upload a PDF and start asking questions.
+        Upload a PDF and start asking questions.
 
-                <br><br>
+        <br><br>
 
-                <strong>
-                    Local Embeddings
-                </strong>
-                &nbsp; • &nbsp;
+        <strong>
+            Local Embeddings
+        </strong>
+        &nbsp; • &nbsp;
 
-                <strong>
-                    ChromaDB
-                </strong>
-                &nbsp; • &nbsp;
+        <strong>
+            ChromaDB
+        </strong>
+        &nbsp; • &nbsp;
 
-                <strong>
-                    RAG
-                </strong>
-                &nbsp; • &nbsp;
+        <strong>
+            RAG
+        </strong>
+        &nbsp; • &nbsp;
 
-                <strong>
-                    Groq LLM
-                </strong>
+        <strong>
+            Llama 3.2
+        </strong>
 
-            </div>
+    </div>
 
-        </div>
+</div>
         """,
         unsafe_allow_html=True
     )
@@ -1909,17 +2308,15 @@ else:
 
 st.markdown(
     """
-    <div class="footer">
+<div class="footer">
 
-        ✦ DocuMind AI
-        &nbsp;•&nbsp;
-        RAG
-        &nbsp;•&nbsp;
-        Groq
-        &nbsp;•&nbsp;
-        Private by design
+    ✦ DocuMind AI
+    &nbsp;•&nbsp;
+    Local RAG
+    &nbsp;•&nbsp;
+    Private by design
 
-    </div>
+</div>
     """,
     unsafe_allow_html=True
 )
