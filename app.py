@@ -618,8 +618,7 @@ defaults = {
     "document_name": None,
     "embedding_dimension": 384,
     "chat_history": [],
-    "document_ready": False,
-    "embeddings_ready": False
+    "document_ready": False
 }
 
 for key, value in defaults.items():
@@ -809,7 +808,6 @@ def lexical_score(
     ):
         phrase_score = 1.0
 
-
     important_pairs = [
         ("project", "guide"),
         ("project", "objectives"),
@@ -821,7 +819,6 @@ def lexical_score(
         ("key", "conclusions"),
         ("project", "title")
     ]
-
 
     for word1, word2 in important_pairs:
 
@@ -839,7 +836,6 @@ def lexical_score(
                     phrase_score,
                     0.8
                 )
-
 
     return min(
         1.0,
@@ -869,7 +865,6 @@ def retrieve_relevant_chunks(
         )[0]
     )
 
-
     results = collection.query(
         query_embeddings=[
             question_embedding.tolist()
@@ -881,7 +876,6 @@ def retrieve_relevant_chunks(
             "distances"
         ]
     )
-
 
     documents = (
         results.get("documents", [[]])[0]
@@ -895,9 +889,7 @@ def retrieve_relevant_chunks(
         results.get("distances", [[]])[0]
     )
 
-
     candidates = []
-
 
     for document, metadata, distance in zip(
         documents,
@@ -930,12 +922,10 @@ def retrieve_relevant_chunks(
             "final_score": final_score
         })
 
-
     candidates.sort(
         key=lambda item: item["final_score"],
         reverse=True
     )
-
 
     return candidates[:4]
 
@@ -952,7 +942,6 @@ def build_context(
 
     source_pages = set()
 
-
     for item in retrieved_chunks:
 
         document = item["document"]
@@ -968,7 +957,6 @@ def build_context(
             page_number
         )
 
-
         context_parts.append(
             f"""
 Page {page_number}:
@@ -977,7 +965,6 @@ Page {page_number}:
 """
         )
 
-
     return (
         "\n\n".join(context_parts),
         source_pages
@@ -985,7 +972,7 @@ Page {page_number}:
 
 
 # =========================================================
-# GENERATE ANSWER
+# GENERATE ANSWER - GROQ
 # =========================================================
 
 def generate_answer(
@@ -993,8 +980,11 @@ def generate_answer(
     context
 ):
 
-    import ollama
+    from groq import Groq
 
+    client = Groq(
+        api_key=st.secrets["GROQ_API_KEY"]
+    )
 
     prompt = f"""
 You are DocuMind AI, a precise PDF question-answering assistant.
@@ -1035,25 +1025,21 @@ USER QUESTION:
 ANSWER:
 """
 
-
-    response = ollama.chat(
-        model="llama3.2",
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-20b",
         messages=[
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        options={
-            "temperature": 0.1,
-            "num_ctx": 4096,
-            "num_predict": 300
-        }
+        temperature=0.1,
+        max_completion_tokens=300,
+        reasoning_effort="low"
     )
 
-
     return clean_answer(
-        response["message"]["content"]
+        response.choices[0].message.content
     )
 
 
@@ -1062,7 +1048,10 @@ ANSWER:
 # =========================================================
 
 @st.cache_data(show_spinner=False)
-def extract_and_chunk_pdf(pdf_bytes, source_name):
+def extract_and_chunk_pdf(
+    pdf_bytes,
+    source_name
+):
 
     from pypdf import PdfReader
     from langchain_text_splitters import (
@@ -1140,6 +1129,10 @@ def extract_and_chunk_pdf(pdf_bytes, source_name):
     return pages_data, chunks
 
 
+# =========================================================
+# CREATE DOCUMENT EMBEDDINGS
+# =========================================================
+
 @st.cache_data(show_spinner=False)
 def create_document_embeddings(
     pdf_hash,
@@ -1158,7 +1151,13 @@ def create_document_embeddings(
     )
 
 
-def process_pdf(uploaded_file):
+# =========================================================
+# PROCESS PDF
+# =========================================================
+
+def process_pdf(
+    uploaded_file
+):
 
     pdf_bytes = uploaded_file.getvalue()
 
@@ -1166,88 +1165,61 @@ def process_pdf(uploaded_file):
         pdf_bytes
     ).hexdigest()
 
-    # Same document is already loaded in this session.
     if (
-        st.session_state.processed_pdf_hash == pdf_hash
+        st.session_state.processed_pdf_hash
+        == pdf_hash
         and st.session_state.document_ready
-        and st.session_state.collection is not None
     ):
         return
 
-    chroma_client = get_chroma_client()
-
-    # IMPORTANT PERFORMANCE DESIGN:
-    # Upload processing only extracts and chunks the PDF.
-    # Embeddings are generated lazily when the first question is asked.
-    pages_data, chunks = extract_and_chunk_pdf(
-        pdf_bytes,
-        uploaded_file.name
+    chroma_client = (
+        get_chroma_client()
     )
 
-    collection_name = f"pdf_{pdf_hash}"
-
-    collection = chroma_client.get_or_create_collection(
-        name=collection_name
+    pages_data, chunks = (
+        extract_and_chunk_pdf(
+            pdf_bytes,
+            uploaded_file.name
+        )
     )
 
-    st.session_state.processed_pdf_hash = pdf_hash
-    st.session_state.pages_data = pages_data
-    st.session_state.chunks = chunks
-    st.session_state.collection_name = collection_name
-    st.session_state.collection = collection
-    st.session_state.document_name = uploaded_file.name
-    st.session_state.embedding_dimension = 384
-    st.session_state.embeddings_ready = collection.count() > 0
-    st.session_state.document_ready = True
-    st.session_state.chat_history = []
-
-
-def ensure_document_embeddings():
-
-    if not st.session_state.document_ready:
-        return
-
-    collection = st.session_state.collection
-
-    if collection is None:
-        raise RuntimeError("Document collection is not initialized.")
-
-    # If embeddings already exist in ChromaDB, nothing to do.
-    if collection.count() > 0:
-        st.session_state.embeddings_ready = True
-        return
-
-    chunks = st.session_state.chunks
-
-    if not chunks:
-        raise RuntimeError("No text could be extracted from this PDF.")
-
-    texts = tuple(
-        chunk["text"]
-        for chunk in chunks
+    collection_name = (
+        f"pdf_{pdf_hash}"
     )
 
-    # This is the only expensive upload-independent step.
-    # It happens when the user asks the first question instead of
-    # making the PDF upload wait for embeddings.
-    embeddings = create_document_embeddings(
-        st.session_state.processed_pdf_hash,
-        texts
+    collection = (
+        chroma_client.get_or_create_collection(
+            name=collection_name
+        )
     )
 
-    pdf_hash = st.session_state.processed_pdf_hash
+    existing_count = collection.count()
 
-    collection.upsert(
-        ids=[
-            f"{pdf_hash}_{i}"
-            for i in range(len(chunks))
-        ],
-        documents=[
+    if existing_count == 0 and chunks:
+
+        texts = tuple(
             chunk["text"]
             for chunk in chunks
-        ],
-        embeddings=embeddings.tolist(),
-        metadatas=[
+        )
+
+        embeddings = (
+            create_document_embeddings(
+                pdf_hash,
+                texts
+            )
+        )
+
+        ids = [
+            f"{pdf_hash}_{i}"
+            for i in range(len(chunks))
+        ]
+
+        documents = [
+            chunk["text"]
+            for chunk in chunks
+        ]
+
+        metadatas = [
             {
                 "page": chunk["page"],
                 "source": chunk["source"],
@@ -1255,9 +1227,44 @@ def ensure_document_embeddings():
             }
             for chunk in chunks
         ]
+
+        collection.upsert(
+            ids=ids,
+            documents=documents,
+            embeddings=embeddings.tolist(),
+            metadatas=metadatas
+        )
+
+    st.session_state.processed_pdf_hash = (
+        pdf_hash
     )
 
-    st.session_state.embeddings_ready = True
+    st.session_state.pages_data = (
+        pages_data
+    )
+
+    st.session_state.chunks = (
+        chunks
+    )
+
+    st.session_state.collection_name = (
+        collection_name
+    )
+
+    st.session_state.collection = (
+        collection
+    )
+
+    st.session_state.document_name = (
+        uploaded_file.name
+    )
+
+    st.session_state.embedding_dimension = 384
+
+    st.session_state.document_ready = True
+
+    st.session_state.chat_history = []
+
 
 # =========================================================
 # SIDEBAR
@@ -1279,12 +1286,10 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-
     st.markdown(
         '<div class="sidebar-heading">SYSTEM</div>',
         unsafe_allow_html=True
     )
-
 
     st.markdown(
         """
@@ -1292,13 +1297,13 @@ with st.sidebar:
 
             <div class="sidebar-status">
                 <span class="status-dot"></span>
-                Local AI system ready
+                AI system ready
             </div>
 
             <br>
 
             <strong>LLM</strong><br>
-            Llama 3.2
+            GPT-OSS 20B via Groq
 
             <br><br>
 
@@ -1320,12 +1325,10 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-
     st.markdown(
         '<div class="sidebar-heading">PERFORMANCE</div>',
         unsafe_allow_html=True
     )
-
 
     st.markdown(
         """
@@ -1350,36 +1353,32 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-
     st.markdown(
         '<div class="sidebar-heading">PRIVACY</div>',
         unsafe_allow_html=True
     )
 
-
     st.markdown(
         """
         <div class="sidebar-card">
 
-            🔒 Documents remain local.
+            🔒 Document processing and
+            embeddings remain local.
 
             <br><br>
 
-            No OpenAI API.<br>
-            No Gemini API.<br>
-            Local Llama inference.
+            LLM answers are generated
+            through the secured Groq API.
 
         </div>
         """,
         unsafe_allow_html=True
     )
 
-
     st.markdown(
         '<div class="sidebar-heading">DOCUMENT</div>',
         unsafe_allow_html=True
     )
-
 
     if st.session_state.document_name:
 
@@ -1417,9 +1416,7 @@ with st.sidebar:
             unsafe_allow_html=True
         )
 
-
     st.markdown("")
-
 
     if st.button(
         "＋  New Document",
@@ -1434,7 +1431,6 @@ with st.sidebar:
         st.session_state.document_name = None
         st.session_state.chat_history = []
         st.session_state.document_ready = False
-        st.session_state.embeddings_ready = False
 
         st.rerun()
 
@@ -1474,7 +1470,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 uploaded_file = st.file_uploader(
     "📎 Upload a PDF",
     type=["pdf"],
@@ -1493,7 +1488,6 @@ if uploaded_file is not None:
     pdf_hash = hashlib.md5(
         pdf_bytes
     ).hexdigest()
-
 
     if (
         st.session_state.processed_pdf_hash
@@ -1544,7 +1538,6 @@ if st.session_state.document_ready:
         st.session_state.chunks
     )
 
-
     # -----------------------------------------------------
     # DOCUMENT BAR
     # -----------------------------------------------------
@@ -1570,7 +1563,7 @@ if st.session_state.document_ready:
                     &nbsp;•&nbsp;
                     384-dimensional embeddings
                     &nbsp;•&nbsp;
-                    Local AI
+                    RAG
                 </div>
 
             </div>
@@ -1579,7 +1572,6 @@ if st.session_state.document_ready:
         """,
         unsafe_allow_html=True
     )
-
 
     # -----------------------------------------------------
     # WELCOME
@@ -1606,9 +1598,7 @@ if st.session_state.document_ready:
             unsafe_allow_html=True
         )
 
-
         col1, col2 = st.columns(2)
-
 
         with col1:
 
@@ -1621,7 +1611,6 @@ if st.session_state.document_ready:
                 unsafe_allow_html=True
             )
 
-
             st.markdown(
                 """
                 <div class="suggestion-box">
@@ -1630,7 +1619,6 @@ if st.session_state.document_ready:
                 """,
                 unsafe_allow_html=True
             )
-
 
         with col2:
 
@@ -1643,7 +1631,6 @@ if st.session_state.document_ready:
                 unsafe_allow_html=True
             )
 
-
             st.markdown(
                 """
                 <div class="suggestion-box">
@@ -1653,7 +1640,6 @@ if st.session_state.document_ready:
                 unsafe_allow_html=True
             )
 
-
     # =====================================================
     # CHAT HISTORY
     # =====================================================
@@ -1662,29 +1648,19 @@ if st.session_state.document_ready:
 
         if message["role"] == "user":
 
-            # IMPORTANT:
-            # No emoji avatar is passed here.
-            # Streamlit uses its own built-in user avatar.
-
             with st.chat_message("user"):
 
                 st.markdown(
                     message["content"]
                 )
 
-
         else:
-
-            # IMPORTANT:
-            # No custom avatar is passed here.
-            # This prevents the Streamlit avatar error.
 
             with st.chat_message("assistant"):
 
                 st.markdown(
                     message["content"]
                 )
-
 
                 if message.get("sources"):
 
@@ -1695,9 +1671,7 @@ if st.session_state.document_ready:
                         unsafe_allow_html=True
                     )
 
-
                     source_html = ""
-
 
                     for page in message["sources"]:
 
@@ -1707,12 +1681,10 @@ if st.session_state.document_ready:
                             f'</span>'
                         )
 
-
                     st.markdown(
                         source_html,
                         unsafe_allow_html=True
                     )
-
 
     # =====================================================
     # CHAT INPUT
@@ -1722,7 +1694,6 @@ if st.session_state.document_ready:
         "Ask your document anything..."
     )
 
-
     if question:
 
         st.session_state.chat_history.append({
@@ -1730,20 +1701,11 @@ if st.session_state.document_ready:
             "content": question
         })
 
-
         try:
 
-            # Generate embeddings lazily on the first question.
-            # This keeps PDF upload fast while preserving the same
-            # semantic + keyword RAG retrieval once ready.
-            if not st.session_state.embeddings_ready:
-
-                with st.spinner(
-                    "✦ Preparing document search for the first question..."
-                ):
-                    ensure_document_embeddings()
-
-            embedding_model = load_embedding_model()
+            embedding_model = (
+                load_embedding_model()
+            )
 
             with st.spinner(
                 "✦ Finding the most relevant information..."
@@ -1757,13 +1719,11 @@ if st.session_state.document_ready:
                     )
                 )
 
-
             context, source_pages = (
                 build_context(
                     retrieved_chunks
                 )
             )
-
 
             if not retrieved_chunks:
 
@@ -1774,13 +1734,11 @@ if st.session_state.document_ready:
 
                 source_pages = set()
 
-
             else:
 
                 best_score = (
                     retrieved_chunks[0]["final_score"]
                 )
-
 
                 if best_score < 0.18:
 
@@ -1790,7 +1748,6 @@ if st.session_state.document_ready:
                     )
 
                     source_pages = set()
-
 
                 else:
 
@@ -1803,7 +1760,6 @@ if st.session_state.document_ready:
                             context
                         )
 
-
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": answer,
@@ -1812,9 +1768,7 @@ if st.session_state.document_ready:
                 )
             })
 
-
             st.rerun()
-
 
         except Exception as error:
 
@@ -1829,7 +1783,6 @@ if st.session_state.document_ready:
 
             st.rerun()
 
-
     # =====================================================
     # RETRIEVAL DEBUGGER
     # =====================================================
@@ -1843,24 +1796,18 @@ if st.session_state.document_ready:
             "semantic + keyword retrieval system."
         )
 
-
         debug_question = st.text_input(
             "Test retrieval",
             placeholder="Enter a question..."
         )
 
-
         if debug_question:
 
             try:
 
-                if not st.session_state.embeddings_ready:
-                    with st.spinner(
-                        "✦ Preparing document search..."
-                    ):
-                        ensure_document_embeddings()
-
-                embedding_model = load_embedding_model()
+                embedding_model = (
+                    load_embedding_model()
+                )
 
                 debug_chunks = (
                     retrieve_relevant_chunks(
@@ -1870,7 +1817,6 @@ if st.session_state.document_ready:
                     )
                 )
 
-
                 for i, item in enumerate(
                     debug_chunks,
                     start=1
@@ -1878,12 +1824,10 @@ if st.session_state.document_ready:
 
                     metadata = item["metadata"]
 
-
                     st.markdown(
                         f"**Result {i} — "
                         f"Page {metadata['page']}**"
                     )
-
 
                     st.caption(
                         f"Final score: "
@@ -1899,14 +1843,11 @@ if st.session_state.document_ready:
                         f"{item['distance']:.3f}"
                     )
 
-
                     st.write(
                         item["document"]
                     )
 
-
                     st.divider()
-
 
             except Exception as error:
 
@@ -1951,7 +1892,7 @@ else:
                 &nbsp; • &nbsp;
 
                 <strong>
-                    Llama 3.2
+                    Groq LLM
                 </strong>
 
             </div>
@@ -1972,7 +1913,9 @@ st.markdown(
 
         ✦ DocuMind AI
         &nbsp;•&nbsp;
-        Local RAG
+        RAG
+        &nbsp;•&nbsp;
+        Groq
         &nbsp;•&nbsp;
         Private by design
 
